@@ -14,72 +14,56 @@
 
 repeat task.wait(1) until game:IsLoaded()
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
 ----------------------------------------------------------------
 -- ⚙️ CONFIGURATION
 ----------------------------------------------------------------
 local CONFIG = {
-    -- 🔗 GitHub Raw URL
+    -- 🔗 GitHub Raw URL (เปลี่ยนเป็น URL ของคุณ)
     GITHUB_BASE_URL = "https://raw.githubusercontent.com/talnw1123/The-Forge-Script2/refs/heads/main/",
     
     -- ⏱️ Timing
     INITIAL_WAIT = 1,          -- รอเริ่มต้น (วินาที)
-    QUEST_CHECK_INTERVAL = 1,    -- เช็ค Quest ใหม่ทุกกี่วินาที
+    QUEST_CHECK_INTERVAL = 2,    -- เช็ค Quest ใหม่ทุกกี่วินาที
     
     -- 🎮 Quest Range
     MIN_QUEST = 1,
     MAX_QUEST = 18,
     
-    --  Optimization
+    -- 🔧 Debug
+    DEBUG_MODE = true,
+    
+    -- 🚀 Optimization
     LOAD_FPS_BOOSTER = true,
+    
+    -- 🛡️ Anti-AFK
+    ANTI_AFK_ENABLED = true,
+    ANTI_AFK_INTERVAL = 120,   -- ทุกๆ 2 นาที
+    ANTI_AFK_CLICK_COUNT = 5,  -- จำนวนคลิกต่อรอบ
 }
 
 ----------------------------------------------------------------
--- � ANTI-AFK SYSTEM
-----------------------------------------------------------------
-player.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-    print("� Anti-AFK: Virtual Click Sent")
-end)
-
-----------------------------------------------------------------
--- � LOAD SHARED UTILITIES
+-- 📦 LOAD SHARED UTILITIES
 ----------------------------------------------------------------
 print("=" .. string.rep("=", 59))
 print("🔥 THE FORGE - MODULAR QUEST LOADER")
 print("=" .. string.rep("=", 59))
 
-if CONFIG.INITIAL_WAIT > 0 then
-    print("\n⏳ Initial wait: " .. CONFIG.INITIAL_WAIT .. " seconds...")
-    task.wait(CONFIG.INITIAL_WAIT)
-end
+print("\n⏳ Initial wait: " .. CONFIG.INITIAL_WAIT .. " seconds...")
+task.wait(CONFIG.INITIAL_WAIT)
 
 print("\n📦 Loading Shared Utilities...")
 local sharedUrl = CONFIG.GITHUB_BASE_URL .. "Shared.lua"
 local sharedSuccess, sharedError = pcall(function()
-    local code = game:HttpGet(sharedUrl)
-    local func, compileError = loadstring(code)
-    if func then
-        return func()
-    else
-        error("Failed to compile Shared.lua: " .. tostring(compileError))
-    end
+    loadstring(game:HttpGet(sharedUrl))()
 end)
 
-if sharedSuccess then
-    print("✅ Shared utilities loaded!")
-else
+if not sharedSuccess then
     warn("❌ Failed to load Shared.lua: " .. tostring(sharedError))
-    return -- Stop execution if Shared fails
+    warn("💡 Make sure the URL is correct: " .. sharedUrl)
+    return
 end
+
+print("✅ Shared utilities loaded!")
 
 -- ตรวจสอบว่า Shared โหลดสำเร็จ
 if not _G.Shared then
@@ -107,18 +91,87 @@ if CONFIG.LOAD_FPS_BOOSTER then
 end
 
 ----------------------------------------------------------------
--- 🔍 QUEST DETECTION SYSTEM
+-- 🛡️ ANTI-AFK SYSTEM
 ----------------------------------------------------------------
+if CONFIG.ANTI_AFK_ENABLED then
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    local GuiService = game:GetService("GuiService")
+    local camera = workspace.CurrentCamera
+    
+    local function performAntiAfkClicks()
+        local viewportSize = camera.ViewportSize
+        local guiInset = GuiService:GetGuiInset()
+        local centerX = viewportSize.X / 2
+        local centerY = (viewportSize.Y / 2) + guiInset.Y
+        
+        print("🛡️ [ANTI-AFK] Performing " .. CONFIG.ANTI_AFK_CLICK_COUNT .. " virtual clicks...")
+        
+        for i = 1, CONFIG.ANTI_AFK_CLICK_COUNT do
+            VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
+            
+            if i < CONFIG.ANTI_AFK_CLICK_COUNT then
+                task.wait(0.5)
+            end
+        end
+        
+        print("🛡️ [ANTI-AFK] Clicks complete! Next in " .. CONFIG.ANTI_AFK_INTERVAL .. " seconds.")
+    end
+    
+    task.spawn(function()
+        print("🛡️ [ANTI-AFK] System started! Clicking every " .. CONFIG.ANTI_AFK_INTERVAL .. " seconds.")
+        while true do
+            task.wait(CONFIG.ANTI_AFK_INTERVAL)
+            pcall(performAntiAfkClicks)
+        end
+    end)
+end
+
+----------------------------------------------------------------
+-- � QUEST 15 BACKGROUND (Auto Claim Index)
+----------------------------------------------------------------
+-- Start immediately, run every 10 seconds
+local quest15Running = false
+
+local function startQuest15Background()
+    if quest15Running then return end
+    quest15Running = true
+    
+    task.spawn(function()
+        print("\n🐉 Starting Quest 15 (Auto Claim Index) in BACKGROUND...")
+        print("   ⏰ Running every 10 seconds")
+        
+        while quest15Running do
+            pcall(function()
+                loadQuest(15)
+            end)
+            
+            task.wait(10)  -- Run every 10 seconds
+        end
+    end)
+end
+
+-- Start Quest 15 Background immediately
+startQuest15Background()
+
+----------------------------------------------------------------
+-- �🔍 QUEST DETECTION SYSTEM
+----------------------------------------------------------------
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
 local function getActiveQuestNumber()
     local gui = player:FindFirstChild("PlayerGui")
-    if not gui then return nil, nil end
+    if not gui then return nil end
     
     local list = gui:FindFirstChild("Main") 
         and gui.Main:FindFirstChild("Screen") 
         and gui.Main.Screen:FindFirstChild("Quests") 
         and gui.Main.Screen.Quests:FindFirstChild("List")
     
-    if not list then return nil, nil end
+    if not list then return nil end
     
     -- หา Quest ที่ active อยู่
     for _, child in ipairs(list:GetChildren()) do
@@ -147,7 +200,7 @@ local function getActiveQuestNumber()
         end
     end
     
-    return nil, nil
+    return nil
 end
 
 local function isQuestComplete(questNum)
@@ -213,39 +266,6 @@ local function loadQuest(questNum)
 end
 
 ----------------------------------------------------------------
--- 🐉 BACKGROUND QUEST 15 (Dragon Fight)
-----------------------------------------------------------------
-local quest15Running = false
-
-local function startQuest15Background()
-    if quest15Running then return end
-    quest15Running = true
-    
-    task.spawn(function()
-        print("\n🐉 Starting Quest 15 (Dragon Fight) in BACKGROUND...")
-        
-        while quest15Running do
-            -- เช็คว่ามี Dragon ให้ฆ่าไหม
-            local dragonKilled = false
-            
-            pcall(function()
-                local success = loadQuest(15)
-                if success then
-                    dragonKilled = true
-                end
-            end)
-            
-            -- รอก่อน loop ใหม่
-            task.wait(30)  -- เช็คทุก 30 วินาที
-        end
-    end)
-end
-
-local function stopQuest15Background()
-    quest15Running = false
-end
-
-----------------------------------------------------------------
 -- 🎮 MAIN QUEST RUNNER
 ----------------------------------------------------------------
 local function runQuestLoop()
@@ -256,7 +276,7 @@ local function runQuestLoop()
     local currentQuest = CONFIG.MIN_QUEST
     local maxAttempts = 3
     local reachedQuest18 = false
-    local quest13Run = false
+    local quest13Run = false  -- Track Quest 13 execution
     
     -- เช็คว่าเริ่มที่ Quest 18 หรือยัง
     local activeNum, _ = getActiveQuestNumber()
@@ -272,29 +292,41 @@ local function runQuestLoop()
             continue
         end
         
+        -- ============================================
         -- 🛠️ CUSTOM QUEST LOGIC (13, 17, 18)
+        -- ไม่เช็ค UI, รันตาม internal logic
+        -- ============================================
         if currentQuest == 13 then
+            -- Quest 13: Run once per session
             if not quest13Run then
-                print("\n🔍 Checking Quest 13 (Bard Quest) [Run Once]...")
+                print("\n🎵 Loading Quest 13 (Bard Quest) [Run Once Per Session]...")
                 loadQuest(13)
                 quest13Run = true
             else
                 print("   ⏭️ Quest 13 already ran this session, skipping.")
             end
             currentQuest = currentQuest + 1
+            task.wait(2)
             continue
+            
         elseif currentQuest == 17 then
-            print("\n🔍 Checking Quest 17 (Auto Mining < 10)...")
+            -- Quest 17: Auto mining until level 10 (internal check)
+            print("\n⛏️ Loading Quest 17 (Auto Mining Until Level 10)...")
             loadQuest(17)
-            -- Quest 17 will return if Level >= 10
             currentQuest = currentQuest + 1
+            task.wait(2)
             continue
+            
         elseif currentQuest == 18 then
-            print("\n🔍 Checking Quest 18 (Smart Mining)...")
+            -- Quest 18: Smart mining (internal check)
+            print("\n🌋 Loading Quest 18 (Smart Mining)...")
             loadQuest(18)
-            break -- Quest 18 is the final loop
+            break  -- Quest 18 is infinite loop
         end
         
+        -- ============================================
+        -- 📋 STANDARD UI-BASED QUEST LOGIC (1-12, 14-16)
+        -- ============================================
         print(string.format("\n🔍 Checking Quest %d...", currentQuest))
         
         -- เช็คว่า Quest นี้ active หรือยัง
@@ -302,11 +334,6 @@ local function runQuestLoop()
         
         if activeNum then
             print(string.format("   📋 Active Quest: #%d - %s", activeNum, activeName or "Unknown"))
-            
-            -- ถ้าถึง Quest 15+ ให้เริ่ม Background Quest 15
-            if activeNum >= 15 and not quest15Running then
-                startQuest15Background()
-            end
             
             -- ถ้าถึง Quest 18 ให้ mark ว่าไม่ต้องเช็ค Quest เก่าอีก
             if activeNum >= 18 then

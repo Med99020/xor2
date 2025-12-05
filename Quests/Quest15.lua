@@ -378,17 +378,10 @@ end
 print(string.rep("=", 50))
 print("🚀 QUEST 15: " .. QUEST_CONFIG.QUEST_NAME)
 print("🎯 Objective: Auto Claim Index (Codex)")
-print("✅ Strategy: Check Gold → Claim All Index")
+print("✅ Strategy: Auto Claim All Index (No Gold Check)")
 print(string.rep("=", 50))
 
--- Check Gold First
-print("\n🔍 Pre-check: Verifying gold requirement...")
-if not shouldClaimIndex() then
-    print("\n✅ No need to claim (Gold sufficient)")
-    print(string.rep("=", 50))
-    Quest15Active = false
-    return
-end
+-- Always claim (no Gold restriction)
 
 -- If Gold < MIN_GOLD, Claim
 local maxAttempts = 1
