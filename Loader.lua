@@ -293,7 +293,7 @@ local function runQuestLoop()
         end
         
         -- ============================================
-        -- 🛠️ CUSTOM QUEST LOGIC (13, 14, 16, 17, 18)
+        -- 🛠️ CUSTOM QUEST LOGIC (13, 14, 15, 16, 17, 18)
         -- ไม่เช็ค UI, รันตาม internal logic
         -- ============================================
         if currentQuest == 13 then
@@ -315,6 +315,13 @@ local function runQuestLoop()
             loadQuest(14)
             currentQuest = currentQuest + 1
             task.wait(2)
+            continue
+            
+        elseif currentQuest == 15 then
+            -- Quest 15: Skip UI check, already running in background
+            print("\n⏭️ Quest 15 already running in background, skip to Quest 16...")
+            currentQuest = currentQuest + 1
+            task.wait(1)
             continue
             
         elseif currentQuest == 16 then
@@ -341,7 +348,7 @@ local function runQuestLoop()
         end
         
         -- ============================================
-        -- 📋 STANDARD UI-BASED QUEST LOGIC (1-12, 15)
+        -- 📋 STANDARD UI-BASED QUEST LOGIC (1-12)
         -- ============================================
         print(string.format("\n🔍 Checking Quest %d...", currentQuest))
         
