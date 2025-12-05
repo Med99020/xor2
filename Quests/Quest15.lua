@@ -1,7 +1,7 @@
 local Shared = _G.Shared
 
 -- QUEST 15: Auto Claim Index (Codex System)
--- ✅ Scans UI for claimable items (like TestClaim.lua)
+-- ✅ Scans UI for claimable items (Matches TestClaim.lua logic)
 -- ✅ Claims Ores, Enemies, Equipments
 -- ✅ Only claims items that have Claim button
 
@@ -15,7 +15,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- CONFIG
 ----------------------------------------------------------------
 local Quest15Active = true
-local DEBUG_MODE = false
+local DEBUG_MODE = true -- Enabled by default to match TestClaim visibility
 
 local QUEST_CONFIG = {
     QUEST_NAME = "Auto Claim Index",
@@ -57,7 +57,34 @@ local function getIndexUI()
                    and playerGui.Menu.Frame:FindFirstChild("Frame")
                    and playerGui.Menu.Frame.Frame:FindFirstChild("Menus")
                    and playerGui.Menu.Frame.Frame.Menus:FindFirstChild("Index")
-    return indexUI
+    
+    if indexUI then
+        return indexUI
+    else
+        -- Fallback check (from TestClaim.lua)
+        if DEBUG_MODE then
+            print("   ❌ Index UI NOT FOUND! Checking path...")
+            local menu = playerGui:FindFirstChild("Menu")
+            print("   - Menu: " .. (menu and "✅" or "❌"))
+            if menu then
+                local frame1 = menu:FindFirstChild("Frame")
+                print("   - Menu.Frame: " .. (frame1 and "✅" or "❌"))
+                if frame1 then
+                    local frame2 = frame1:FindFirstChild("Frame")
+                    print("   - Menu.Frame.Frame: " .. (frame2 and "✅" or "❌"))
+                    if frame2 then
+                        local menus = frame2:FindFirstChild("Menus")
+                        print("   - Menu.Frame.Frame.Menus: " .. (menus and "✅" or "❌"))
+                        if menus then
+                            local index = menus:FindFirstChild("Index")
+                            print("   - Menu.Frame.Frame.Menus.Index: " .. (index and "✅" or "❌"))
+                        end
+                    end
+                end
+            end
+        end
+        return nil
+    end
 end
 
 ----------------------------------------------------------------
@@ -71,8 +98,10 @@ local function claimOre(oreName)
     end)
     
     if success then
-        print(string.format("   🪨 Claimed: %s", oreName))
+        print(string.format("   🪨 Claimed: %s | Result: %s", oreName, tostring(result)))
         return true
+    else
+        warn(string.format("   ❌ Failed to claim %s: %s", oreName, tostring(result)))
     end
     return false
 end
@@ -85,8 +114,10 @@ local function claimEnemy(enemyName)
     end)
     
     if success then
-        print(string.format("   👹 Claimed: %s", enemyName))
+        print(string.format("   👹 Claimed: %s | Result: %s", enemyName, tostring(result)))
         return true
+    else
+        warn(string.format("   ❌ Failed to claim %s: %s", enemyName, tostring(result)))
     end
     return false
 end
@@ -99,8 +130,10 @@ local function claimEquipment(equipmentName)
     end)
     
     if success then
-        print(string.format("   ⚔️ Claimed: %s", equipmentName))
+        print(string.format("   ⚔️ Claimed: %s | Result: %s", equipmentName, tostring(result)))
         return true
+    else
+        warn(string.format("   ❌ Failed to claim %s: %s", equipmentName, tostring(result)))
     end
     return false
 end
@@ -123,19 +156,31 @@ local function claimAllIndex()
         return false
     end
     
+    if DEBUG_MODE then
+        print("\n📂 PAGES FOUND:")
+        for _, page in ipairs(pages:GetChildren()) do
+            print("   - " .. page.Name)
+        end
+    end
+    
     -- 1. CLAIM ORES
     local oresPage = pages:FindFirstChild("Ores")
     if oresPage then
+        if DEBUG_MODE then print("\n🪨 CHECKING ORES...") end
         for _, child in ipairs(oresPage:GetChildren()) do
             if string.find(child.Name, "List$") then
                 for _, oreItem in ipairs(child:GetChildren()) do
                     if oreItem:IsA("Frame") or oreItem:IsA("GuiObject") then
                         local main = oreItem:FindFirstChild("Main")
-                        if main and main:FindFirstChild("Claim") then
-                            if claimOre(oreItem.Name) then
-                                totalClaimed = totalClaimed + 1
+                        if main then
+                            local claim = main:FindFirstChild("Claim")
+                            if claim then
+                                if DEBUG_MODE then print("      ✅ CLAIMABLE: " .. oreItem.Name) end
+                                if claimOre(oreItem.Name) then
+                                    totalClaimed = totalClaimed + 1
+                                end
+                                task.wait(QUEST_CONFIG.CLAIM_DELAY)
                             end
-                            task.wait(QUEST_CONFIG.CLAIM_DELAY)
                         end
                     end
                 end
@@ -148,16 +193,21 @@ local function claimAllIndex()
     if enemiesPage then
         local scrollFrame = enemiesPage:FindFirstChild("ScrollingFrame")
         if scrollFrame then
+            if DEBUG_MODE then print("\n👹 CHECKING ENEMIES...") end
             for _, child in ipairs(scrollFrame:GetChildren()) do
                 if string.find(child.Name, "List$") then
                     for _, enemyItem in ipairs(child:GetChildren()) do
                         if enemyItem:IsA("Frame") or enemyItem:IsA("GuiObject") then
                             local main = enemyItem:FindFirstChild("Main")
-                            if main and main:FindFirstChild("Claim") then
-                                if claimEnemy(enemyItem.Name) then
-                                    totalClaimed = totalClaimed + 1
+                            if main then
+                                local claim = main:FindFirstChild("Claim")
+                                if claim then
+                                    if DEBUG_MODE then print("      ✅ CLAIMABLE: " .. enemyItem.Name) end
+                                    if claimEnemy(enemyItem.Name) then
+                                        totalClaimed = totalClaimed + 1
+                                    end
+                                    task.wait(QUEST_CONFIG.CLAIM_DELAY)
                                 end
-                                task.wait(QUEST_CONFIG.CLAIM_DELAY)
                             end
                         end
                     end
@@ -171,16 +221,21 @@ local function claimAllIndex()
     if equipPage then
         local scrollFrame = equipPage:FindFirstChild("ScrollingFrame")
         if scrollFrame then
+            if DEBUG_MODE then print("\n⚔️ CHECKING EQUIPMENTS...") end
             for _, child in ipairs(scrollFrame:GetChildren()) do
                 if string.find(child.Name, "List$") then
                     for _, equipItem in ipairs(child:GetChildren()) do
                         if equipItem:IsA("Frame") or equipItem:IsA("GuiObject") then
                             local main = equipItem:FindFirstChild("Main")
-                            if main and main:FindFirstChild("Claim") then
-                                if claimEquipment(equipItem.Name) then
-                                    totalClaimed = totalClaimed + 1
+                            if main then
+                                local claim = main:FindFirstChild("Claim")
+                                if claim then
+                                    if DEBUG_MODE then print("      ✅ CLAIMABLE: " .. equipItem.Name) end
+                                    if claimEquipment(equipItem.Name) then
+                                        totalClaimed = totalClaimed + 1
+                                    end
+                                    task.wait(QUEST_CONFIG.CLAIM_DELAY)
                                 end
-                                task.wait(QUEST_CONFIG.CLAIM_DELAY)
                             end
                         end
                     end
@@ -196,7 +251,7 @@ end
 -- EXECUTE
 ----------------------------------------------------------------
 print(string.rep("=", 50))
-print("� QUEST 15: " .. QUEST_CONFIG.QUEST_NAME)
+print("🚀 QUEST 15: " .. QUEST_CONFIG.QUEST_NAME)
 print("🎯 Scanning for claimable Index items...")
 print(string.rep("=", 50))
 
@@ -205,7 +260,7 @@ local success = claimAllIndex()
 if success then
     print("\n✅ Index claiming complete!")
 else
-    print("\n⏸️ No items to claim")
+    print("\n⏸️ No items to claim (or UI not found)")
 end
 
 print(string.rep("=", 50))
