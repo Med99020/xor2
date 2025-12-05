@@ -232,6 +232,10 @@ function Shared.unlockPosition()
     end
 end
 
+function Shared.SoftUnlockPosition()
+    Shared.unlockPosition()
+end
+
 ----------------------------------------------------------------
 -- ⌨️ KEYBOARD INPUT
 ----------------------------------------------------------------
