@@ -8,14 +8,16 @@
 ----------------------------------------------------------------
 -- ⚙️ SETTINGS (ปรับได้ตามต้องการ)
 ----------------------------------------------------------------
-local Settings = {
+    -- ====== EMULATOR MODE (NEW) ======
+    EmulatorMode = true,           -- โหมดสำหรับ Emulator (MuMu, LDPlayer) -> ปรับภาพให้ลื่นที่สุด
+    
     -- ====== GRAPHICS ======
     LowerQuality = true,           -- ลดคุณภาพกราฟิกรวม
     DisableShadows = true,         -- ปิดเงา
     DisableParticles = true,       -- ปิด Particles/Effects
     DisableDecals = true,          -- ปิด Decals
-    DisableTextures = false,       -- ปิด Textures (ทำให้ดูแย่มาก)
-    Disable3DRendering = false,    -- ปิด 3D Rendering (สุดขีด)
+    DisableTextures = true,        -- ปิด Textures (Emulator ควรเปิดอันนี้)
+    Disable3DRendering = false,    -- ปิด 3D Rendering (จอดำ) -> เปิดถ้าต้องการ AFK แบบไม่ดูจอ
     
     -- ====== LIGHTING ======
     DisableGlobalShadows = true,   -- ปิด Global Shadows
@@ -26,7 +28,7 @@ local Settings = {
     
     -- ====== TERRAIN ======
     LowerTerrainQuality = true,    -- ลดคุณภาพ Terrain
-    DisableWater = false,          -- ปิด Water rendering
+    DisableWater = true,           -- ปิด Water rendering (Emulator ควรปิด)
     
     -- ====== CHARACTER ======
     DisablePlayerNames = false,    -- ซ่อนชื่อ Player
@@ -34,12 +36,26 @@ local Settings = {
     DisableAccessories = true,     -- ซ่อน Accessories
     
     -- ====== MISC ======
-    DisableSounds = false,         -- ปิดเสียง
-    LimitFPS = false,              -- จำกัด FPS (ช่วยประหยัด CPU)
-    TargetFPS = 60,                -- FPS เป้าหมาย (ถ้าเปิด LimitFPS)
+    DisableSounds = true,          -- ปิดเสียง (Emulator ไม่จำเป็นต้องฟัง)
+    LimitFPS = true,               -- จำกัด FPS (ช่วยประหยัด CPU Emulator)
+    TargetFPS = 30,                -- FPS เป้าหมาย (30 ก็พอสำหรับ Auto Farm)
     GarbageCollect = true,         -- ทำ Garbage Collection
     GCInterval = 60,               -- ทำ GC ทุกกี่วินาที
 }
+
+-- Auto-configure for Emulator Mode
+if Settings.EmulatorMode then
+    Settings.DisableTextures = true
+    Settings.DisableDecals = true
+    Settings.DisableShadows = true
+    Settings.DisableParticles = true
+    Settings.DisableWater = true
+    Settings.SimplifyCharacters = true
+    Settings.DisableAccessories = true
+    Settings.DisableSounds = true
+    Settings.LimitFPS = true
+    Settings.TargetFPS = 30 -- 30 FPS is stable for emulators
+end
 
 ----------------------------------------------------------------
 -- 📦 SERVICES
@@ -263,6 +279,40 @@ local function optimizeCharacters()
 end
 
 ----------------------------------------------------------------
+-- 🧱 MATERIAL OPTIMIZATION (Smooth Plastic)
+----------------------------------------------------------------
+local function optimizeMaterials()
+    if not Settings.EmulatorMode then return end
+    
+    print("🧱 Optimizing Materials (Smooth Plastic)...")
+    
+    local count = 0
+    for _, part in ipairs(Workspace:GetDescendants()) do
+        if part:IsA("BasePart") and not part:IsA("Terrain") then
+            pcall(function()
+                part.Material = Enum.Material.SmoothPlastic
+                part.Reflectance = 0
+                count = count + 1
+            end)
+        end
+    end
+    
+    print(string.format("   ✅ Converted %d parts to Smooth Plastic", count))
+    
+    -- Keep optimizing new parts
+    Workspace.DescendantAdded:Connect(function(part)
+        if part:IsA("BasePart") and not part:IsA("Terrain") then
+            task.defer(function()
+                pcall(function()
+                    part.Material = Enum.Material.SmoothPlastic
+                    part.Reflectance = 0
+                end)
+            end)
+        end
+    end)
+end
+
+----------------------------------------------------------------
 -- 🔊 SOUNDS
 ----------------------------------------------------------------
 local function disableSounds()
@@ -408,6 +458,7 @@ local function runAllOptimizations()
     disableShadows()
     optimizeTerrain()
     optimizeCharacters()
+    optimizeMaterials()
     disableSounds()
     startGarbageCollection()
     startFPSLimiter()
