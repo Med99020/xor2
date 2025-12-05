@@ -36,6 +36,7 @@ local Settings = {
     DisablePlayerNames = false,    -- ซ่อนชื่อ Player
     SimplifyCharacters = true,     -- ลด Character complexity
     DisableAccessories = true,     -- ซ่อน Accessories
+    DisableAnimations = false,     -- 🛑 ปิด Animation (ตัวจะลอยๆ/T-pose) -> ช่วยลด CPU
     
     -- ====== MISC ======
     DisableSounds = false,         -- ปิดเสียง
@@ -441,6 +442,51 @@ local function makeInvisible()
 end
 
 ----------------------------------------------------------------
+-- 🛑 STOP ANIMATIONS (EXTREME)
+----------------------------------------------------------------
+local function stopAnimations()
+    if not Settings.DisableAnimations then return end
+    
+    print("🛑 Stopping Animations...")
+    
+    local function stopCharAnims(char)
+        if not char then return end
+        
+        -- Disable Animate script
+        local animate = char:FindFirstChild("Animate")
+        if animate and animate:IsA("LocalScript") then
+            animate.Disabled = true
+        end
+        
+        -- Stop playing tracks
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            local animator = humanoid:FindFirstChildOfClass("Animator")
+            if animator then
+                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                    track:Stop()
+                end
+            end
+        end
+    end
+    
+    -- Stop local player
+    if player.Character then
+        stopCharAnims(player.Character)
+    end
+    
+    -- Keep stopping new characters
+    Players.PlayerAdded:Connect(function(p)
+        p.CharacterAdded:Connect(function(char)
+            task.wait(1)
+            stopCharAnims(char)
+        end)
+    end)
+    
+    print("   ✅ Animations stopped")
+end
+
+----------------------------------------------------------------
 -- �📊 FPS COUNTER
 ----------------------------------------------------------------
 local function createFPSCounter()
@@ -514,6 +560,7 @@ local function runAllOptimizations()
     startFPSLimiter()
     disable3DRendering()
     makeInvisible()
+    stopAnimations()
     createFPSCounter()
     
     print("\n" .. string.rep("=", 50))
