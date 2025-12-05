@@ -131,7 +131,7 @@ end
 ----------------------------------------------------------------
 -- � QUEST 15 BACKGROUND (Auto Claim Index)
 ----------------------------------------------------------------
--- Start immediately, run every 10 seconds
+-- Start immediately, run every 2 seconds
 local quest15Running = false
 
 local function startQuest15Background()
@@ -147,7 +147,7 @@ local function startQuest15Background()
                 loadQuest(15)
             end)
             
-            task.wait(10)  -- Run every 10 seconds
+            task.wait(2)  -- Run every 10 seconds
         end
     end)
 end
