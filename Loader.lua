@@ -128,32 +128,6 @@ if CONFIG.ANTI_AFK_ENABLED then
     end)
 end
 
-----------------------------------------------------------------
--- � QUEST 15 BACKGROUND (Auto Claim Index)
-----------------------------------------------------------------
--- Start immediately, run every 2 seconds
-local quest15Running = false
-
-local function startQuest15Background()
-    if quest15Running then return end
-    quest15Running = true
-    
-    task.spawn(function()
-        print("\n🐉 Starting Quest 15 (Auto Claim Index) in BACKGROUND...")
-        print("   ⏰ Running every 2 seconds")
-        
-        while quest15Running do
-            pcall(function()
-                loadQuest(15)
-            end)
-            
-            task.wait(2)  -- Run every 10 seconds
-        end
-    end)
-end
-
--- Start Quest 15 Background immediately
-startQuest15Background()
 
 ----------------------------------------------------------------
 -- �🔍 QUEST DETECTION SYSTEM
@@ -264,6 +238,36 @@ local function loadQuest(questNum)
         return false
     end
 end
+
+
+
+----------------------------------------------------------------
+-- � QUEST 15 BACKGROUND (Auto Claim Index)
+----------------------------------------------------------------
+-- Start immediately, run every 2 seconds
+local quest15Running = false
+
+local function startQuest15Background()
+    if quest15Running then return end
+    quest15Running = true
+    
+    task.spawn(function()
+        print("\n🐉 Starting Quest 15 (Auto Claim Index) in BACKGROUND...")
+        print("   ⏰ Running every 2 seconds")
+        
+        while quest15Running do
+            pcall(function()
+                loadQuest(15)
+            end)
+            
+            task.wait(2)  -- Run every 10 seconds
+        end
+    end)
+end
+
+-- Start Quest 15 Background immediately
+startQuest15Background()
+
 
 ----------------------------------------------------------------
 -- 🎮 MAIN QUEST RUNNER
