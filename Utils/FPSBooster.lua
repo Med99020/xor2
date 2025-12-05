@@ -15,7 +15,7 @@ local Settings = {
     DisableParticles = true,       -- ปิด Particles/Effects
     DisableDecals = true,          -- ปิด Decals
     DisableTextures = false,       -- ปิด Textures (ทำให้ดูแย่มาก)
-    Disable3DRendering = false,    -- ปิด 3D Rendering (สุดขีด)
+    Disable3DRendering = true,    -- ปิด 3D Rendering (สุดขีด)
     
     -- ====== LIGHTING ======
     DisableGlobalShadows = true,   -- ปิด Global Shadows
@@ -26,7 +26,7 @@ local Settings = {
     
     -- ====== TERRAIN ======
     LowerTerrainQuality = true,    -- ลดคุณภาพ Terrain
-    DisableWater = false,          -- ปิด Water rendering
+    DisableWater = true,          -- ปิด Water rendering
     
     -- ====== CHARACTER ======
     DisablePlayerNames = false,    -- ซ่อนชื่อ Player
