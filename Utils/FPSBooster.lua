@@ -15,7 +15,7 @@ local Settings = {
     DisableParticles = true,       -- ปิด Particles/Effects
     DisableDecals = true,          -- ปิด Decals
     DisableTextures = false,       -- ปิด Textures (ทำให้ดูแย่มาก)
-    Disable3DRendering = true,    -- ปิด 3D Rendering (สุดขีด)
+    Disable3DRendering = false,    -- ปิด 3D Rendering (สุดขีด)
     
     -- ====== LIGHTING ======
     DisableGlobalShadows = true,   -- ปิด Global Shadows
