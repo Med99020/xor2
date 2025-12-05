@@ -354,7 +354,7 @@ local function getAvailableOres()
     local inventory = getPlayerInventory()
     local ores = {}
     
-    local oreTypes = {"Copper","Stone", "Iron","Sand Stone", "Tin", "Cardboardite", "Silver", "Gold", "Bananite", "Mushroomite", "Platinum","Aite"}
+    local oreTypes = {"Copper","Stone", "Iron","Sand Stone", "Tin", "Cardboardite", "Silver", "Gold", "Bananite", "Mushroomite", "Platinum","Aite","Poopite"}
     
     for _, oreName in ipairs(oreTypes) do
         if inventory[oreName] and inventory[oreName] > 0 then
