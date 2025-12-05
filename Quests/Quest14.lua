@@ -22,7 +22,7 @@ local Quest14Active = true
 local DEBUG_MODE = true
 
 local QUEST_CONFIG = {
-    QUEST_NAME = "Lost Guitar",
+    QUEST_NAME = "Lost Guitar!",
     QUEST_ID = "BardQuest",  -- Use instead of Introduction{N}
     
     -- Guitar Location

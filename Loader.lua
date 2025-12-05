@@ -14,51 +14,72 @@
 
 repeat task.wait(1) until game:IsLoaded()
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
 ----------------------------------------------------------------
 -- ⚙️ CONFIGURATION
 ----------------------------------------------------------------
 local CONFIG = {
-    -- 🔗 GitHub Raw URL (เปลี่ยนเป็น URL ของคุณ)
+    -- 🔗 GitHub Raw URL
     GITHUB_BASE_URL = "https://raw.githubusercontent.com/talnw1123/The-Forge-Script2/refs/heads/main/",
     
     -- ⏱️ Timing
-    INITIAL_WAIT = 180,          -- รอเริ่มต้น (วินาที)
-    QUEST_CHECK_INTERVAL = 2,    -- เช็ค Quest ใหม่ทุกกี่วินาที
+    INITIAL_WAIT = 1,          -- รอเริ่มต้น (วินาที)
+    QUEST_CHECK_INTERVAL = 1,    -- เช็ค Quest ใหม่ทุกกี่วินาที
     
     -- 🎮 Quest Range
     MIN_QUEST = 1,
     MAX_QUEST = 18,
     
-    -- 🔧 Debug
-    DEBUG_MODE = true,
-    
-    -- 🚀 Optimization
+    --  Optimization
     LOAD_FPS_BOOSTER = true,
 }
 
 ----------------------------------------------------------------
--- 📦 LOAD SHARED UTILITIES
+-- � ANTI-AFK SYSTEM
+----------------------------------------------------------------
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+    print("� Anti-AFK: Virtual Click Sent")
+end)
+
+----------------------------------------------------------------
+-- � LOAD SHARED UTILITIES
 ----------------------------------------------------------------
 print("=" .. string.rep("=", 59))
 print("🔥 THE FORGE - MODULAR QUEST LOADER")
 print("=" .. string.rep("=", 59))
 
-print("\n⏳ Initial wait: " .. CONFIG.INITIAL_WAIT .. " seconds...")
-task.wait(CONFIG.INITIAL_WAIT)
+if CONFIG.INITIAL_WAIT > 0 then
+    print("\n⏳ Initial wait: " .. CONFIG.INITIAL_WAIT .. " seconds...")
+    task.wait(CONFIG.INITIAL_WAIT)
+end
 
 print("\n📦 Loading Shared Utilities...")
 local sharedUrl = CONFIG.GITHUB_BASE_URL .. "Shared.lua"
 local sharedSuccess, sharedError = pcall(function()
-    loadstring(game:HttpGet(sharedUrl))()
+    local code = game:HttpGet(sharedUrl)
+    local func, compileError = loadstring(code)
+    if func then
+        return func()
+    else
+        error("Failed to compile Shared.lua: " .. tostring(compileError))
+    end
 end)
 
-if not sharedSuccess then
+if sharedSuccess then
+    print("✅ Shared utilities loaded!")
+else
     warn("❌ Failed to load Shared.lua: " .. tostring(sharedError))
-    warn("💡 Make sure the URL is correct: " .. sharedUrl)
-    return
+    return -- Stop execution if Shared fails
 end
-
-print("✅ Shared utilities loaded!")
 
 -- ตรวจสอบว่า Shared โหลดสำเร็จ
 if not _G.Shared then
@@ -88,42 +109,16 @@ end
 ----------------------------------------------------------------
 -- 🔍 QUEST DETECTION SYSTEM
 ----------------------------------------------------------------
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- Quest Name Mapping
-local QUEST_NAMES = {
-    [1] = "Getting Started!",
-    [2] = "First Pickaxe!",
-    [3] = "Learning to Forge!",
-    [4] = "Getting Equipped!",
-    [5] = "New Pickaxe!",
-    [6] = "Simple Combat!",
-    [7] = "Working Together!",
-    [8] = "Reporting In!",
-    [9] = "The First Upgrade!",
-    [10] = "Runes of Power!",
-    [11] = "End of the Beginning!",
-    [12] = "Everything starts now.",
-    [13] = "Bard Quest",
-    [14] = "Lost Guitar",
-    [15] = "Auto Claim Index",
-    [16] = "Auto Buy Pickaxe",
-    [17] = "Auto Mining Until Level 10",
-    [18] = "Smart Teleport & Mining + Auto Sell & Buy",
-}
-
 local function getActiveQuestNumber()
     local gui = player:FindFirstChild("PlayerGui")
-    if not gui then return nil end
+    if not gui then return nil, nil end
     
     local list = gui:FindFirstChild("Main") 
         and gui.Main:FindFirstChild("Screen") 
         and gui.Main.Screen:FindFirstChild("Quests") 
         and gui.Main.Screen.Quests:FindFirstChild("List")
     
-    if not list then return nil end
+    if not list then return nil, nil end
     
     -- หา Quest ที่ active อยู่
     for _, child in ipairs(list:GetChildren()) do
@@ -152,202 +147,7 @@ local function getActiveQuestNumber()
         end
     end
     
-    return nil
-end
-
-local function isQuestComplete(questNum)
-    local gui = player:FindFirstChild("PlayerGui")
-    if not gui then return true end
-    
-    local list = gui:FindFirstChild("Main") 
-        and gui.Main:FindFirstChild("Screen") 
-        and gui.Main.Screen:FindFirstChild("Quests") 
-        and gui.Main.Screen.Quests:FindFirstChild("List")
-    
-    if not list then return true end
-    
-    -- Convert 1-based QuestNum back to 0-based UI ID
-    local uiID = questNum - 1
-    local objList = list:FindFirstChild("Introduction" .. uiID .. "List")
-    if not objList then return true end
-    
-    for _, item in ipairs(objList:GetChildren()) do
-        if item:IsA("Frame") and tonumber(item.Name) then
-            local check = item:FindFirstChild("Main") 
-                and item.Main:FindFirstChild("Frame") 
-                and item.Main.Frame:FindFirstChild("Check")
-            if check and not check.Visible then
-                return false
-            end
-        end
-    end
-    
-    return true
-end
-
-----------------------------------------------------------------
--- 📥 QUEST LOADER
-----------------------------------------------------------------
-local loadedQuests = {}
-
-local function loadQuest(questNum)
-    local questFile = string.format("Quest%02d.lua", questNum)
-    local questUrl = CONFIG.GITHUB_BASE_URL .. "Quests/" .. questFile
-    
-    print(string.format("\n📥 Loading %s from GitHub...", questFile))
-    print("   URL: " .. questUrl)
-    
-    local success, result = pcall(function()
-        local code = game:HttpGet(questUrl)
-        local func = loadstring(code)
-        if func then
-            return func()
-        else
-            error("Failed to compile quest code")
-        end
-    end)
-    
-    if success then
-        print(string.format("✅ %s loaded successfully!", questFile))
-        loadedQuests[questNum] = true
-        return true
-    else
-        warn(string.format("❌ Failed to load %s: %s", questFile, tostring(result)))
-        return false
-    end
-end
-
-----------------------------------------------------------------
--- 🐉 BACKGROUND QUEST 15 (Dragon Fight)
-----------------------------------------------------------------
-local quest15Running = false
-
-local function startQuest15Background()
-    if quest15Running then return end
-    quest15Running = true
-    
-    task.spawn(function()
-        print("\n🐉 Starting Quest 15 (Dragon Fight) in BACKGROUND...")
-        
-        while quest15Running do
-            -- เช็คว่ามี Dragon ให้ฆ่าไหม
-            local dragonKilled = false
-            
-            pcall(function()
-                local success = loadQuest(15)
-                if success then
-                    dragonKilled = true
-                end
-            end)
-            
-            -- รอก่อน loop ใหม่
-            task.wait(30)  -- เช็คทุก 30 วินาที
-        end
-    end)
-end
-
-local function stopQuest15Background()
-    quest15Running = false
-end
-
-----------------------------------------------------------------
--- 🎮 MAIN QUEST RUNNER
-----------------------------------------------------------------
-local function runQuestLoop()
-    print("\n" .. string.rep("=", 60))
-    print("🎮 STARTING AUTO QUEST RUNNER")
-if not _G.Shared then
-    warn("❌ _G.Shared not found after loading Shared.lua")
-    return
-end
-
-local Shared = _G.Shared
-
-----------------------------------------------------------------
--- 🚀 LOAD FPS BOOSTER
-----------------------------------------------------------------
-if CONFIG.LOAD_FPS_BOOSTER then
-    print("\n🚀 Loading FPS Booster...")
-    local fpsUrl = CONFIG.GITHUB_BASE_URL .. "Utils/FPSBooster.lua"
-    local fpsSuccess, fpsError = pcall(function()
-        loadstring(game:HttpGet(fpsUrl))()
-    end)
-    
-    if fpsSuccess then
-        print("✅ FPS Booster loaded!")
-    else
-        warn("⚠️ Failed to load FPS Booster: " .. tostring(fpsError))
-    end
-end
-
-----------------------------------------------------------------
--- 🔍 QUEST DETECTION SYSTEM
-----------------------------------------------------------------
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- Quest Name Mapping
-local QUEST_NAMES = {
-    [1] = "Getting Started!",
-    [2] = "First Pickaxe!",
-    [3] = "Learning to Forge!",
-    [4] = "Getting Equipped!",
-    [5] = "New Pickaxe!",
-    [6] = "Simple Combat!",
-    [7] = "Working Together!",
-    [8] = "Reporting In!",
-    [9] = "The First Upgrade!",
-    [10] = "Runes of Power!",
-    [11] = "End of the Beginning!",
-    [12] = "Everything starts now.",
-    [13] = "Bard Quest",
-    [14] = "Lost Guitar",
-    [15] = "Auto Claim Index",
-    [16] = "Auto Buy Pickaxe",
-    [17] = "Auto Mining Until Level 10",
-    [18] = "Smart Teleport & Mining + Auto Sell & Buy",
-}
-
-local function getActiveQuestNumber()
-    local gui = player:FindFirstChild("PlayerGui")
-    if not gui then return nil end
-    
-    local list = gui:FindFirstChild("Main") 
-        and gui.Main:FindFirstChild("Screen") 
-        and gui.Main.Screen:FindFirstChild("Quests") 
-        and gui.Main.Screen.Quests:FindFirstChild("List")
-    
-    if not list then return nil end
-    
-    -- หา Quest ที่ active อยู่
-    for _, child in ipairs(list:GetChildren()) do
-        local id = string.match(child.Name, "^Introduction(%d+)Title$")
-        if id and child:FindFirstChild("Frame") and child.Frame:FindFirstChild("TextLabel") then
-            local questName = child.Frame.TextLabel.Text
-            local questNum = tonumber(id) + 1
-            
-            if questNum and questName ~= "" then
-                -- เช็คว่า quest ยังไม่เสร็จ
-                local objList = list:FindFirstChild("Introduction" .. id .. "List")
-                if objList then
-                    for _, item in ipairs(objList:GetChildren()) do
-                        if item:IsA("Frame") and tonumber(item.Name) then
-                            local check = item:FindFirstChild("Main") 
-                                and item.Main:FindFirstChild("Frame") 
-                                and item.Main.Frame:FindFirstChild("Check")
-                            if check and not check.Visible then
-                                -- พบ objective ที่ยังไม่เสร็จ
-                                return questNum, questName
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    return nil
+    return nil, nil
 end
 
 local function isQuestComplete(questNum)
@@ -614,4 +414,3 @@ end
 
 -- Start quest loop
 runQuestLoop()
-
