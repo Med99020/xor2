@@ -137,6 +137,51 @@ end
 
 
 ----------------------------------------------------------------
+-- 📊 LEVEL CHECK SYSTEM
+----------------------------------------------------------------
+local function getPlayerLevel()
+    local gui = player:FindFirstChild("PlayerGui")
+    if not gui then return nil end
+    
+    local levelLabel = gui:FindFirstChild("Main")
+                      and gui.Main:FindFirstChild("Screen")
+                      and gui.Main.Screen:FindFirstChild("Hud")
+                      and gui.Main.Screen.Hud:FindFirstChild("Level")
+    
+    if not levelLabel or not levelLabel:IsA("TextLabel") then
+        return nil
+    end
+    
+    local levelText = levelLabel.Text
+    local level = tonumber(string.match(levelText, "%d+"))
+    return level
+end
+
+----------------------------------------------------------------
+-- � QUEST LIST EMPTY CHECK
+----------------------------------------------------------------
+local function isQuestListEmpty()
+    local gui = player:FindFirstChild("PlayerGui")
+    if not gui then return false end
+    
+    local list = gui:FindFirstChild("Main") 
+        and gui.Main:FindFirstChild("Screen") 
+        and gui.Main.Screen:FindFirstChild("Quests") 
+        and gui.Main.Screen.Quests:FindFirstChild("List")
+    
+    if not list then return false end
+    
+    -- Check if list only has UIListLayout and UIPadding (no actual quests)
+    for _, child in ipairs(list:GetChildren()) do
+        if child.Name ~= "UIListLayout" and child.Name ~= "UIPadding" then
+            return false  -- Found a quest item!
+        end
+    end
+    
+    return true  -- Only UIListLayout and UIPadding = empty!
+end
+
+----------------------------------------------------------------
 -- �🔍 QUEST DETECTION SYSTEM
 ----------------------------------------------------------------
 local Players = game:GetService("Players")
@@ -284,6 +329,21 @@ local function runQuestLoop()
     print("🎮 STARTING AUTO QUEST RUNNER")
     print(string.rep("=", 60))
     
+    -- ✅ RECOVERY CHECK: Quest List is empty?
+    if isQuestListEmpty() then
+        print("\n" .. string.rep("!", 50))
+        print("⚠️ QUEST LIST IS EMPTY!")
+        print("   → No quests in PlayerGui.Main.Screen.Quests.List")
+        print("   → Player may have disconnected during Quest 1 dialogue")
+        print("   → Force loading Quest 1 for recovery...")
+        print(string.rep("!", 50))
+        
+        loadQuest(1)
+        task.wait(5)
+        
+        print("✅ Quest 1 recovery attempted. Continuing...")
+    end
+    
     local currentQuest = CONFIG.MIN_QUEST
     local maxAttempts = 3
     local reachedQuest18 = false
@@ -407,8 +467,30 @@ local function runQuestLoop()
             
             currentQuest = activeNum + 1
         else
-            print("   ⚠️ No active quest found, checking next...")
-            currentQuest = currentQuest + 1
+            -- ⚠️ NO ACTIVE QUEST FOUND
+            print("   ⚠️ No active quest found!")
+            
+            local playerLevel = getPlayerLevel()
+            print(string.format("   📊 Player Level: %s", tostring(playerLevel)))
+            
+            -- 🩹 RECOVERY: If we're checking Quest 1 and no UI found
+            -- This means player likely disconnected during Quest 1 dialogue
+            if currentQuest == 1 then
+                print("\n" .. string.rep("!", 50))
+                print("⚠️ RECOVERY MODE: No Quest 1 UI found!")
+                print("   → May have disconnected during Quest 1 dialogue")
+                print("   → Force loading Quest 1...")
+                print(string.rep("!", 50))
+                
+                loadQuest(1)  -- Quest 1 has its own logic to handle this
+                task.wait(5)
+                
+                -- Move to Quest 2 regardless (Quest 1 script handles completion)
+                currentQuest = 2
+            else
+                -- Normal case: skip to next quest
+                currentQuest = currentQuest + 1
+            end
         end
         
         task.wait(2)

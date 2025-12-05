@@ -273,6 +273,27 @@ local function ForceEndDialogueAndRestore()
 end
 
 ----------------------------------------------------------------
+-- HELPER: LEVEL CHECK
+----------------------------------------------------------------
+local function getPlayerLevel()
+    local gui = player:FindFirstChild("PlayerGui")
+    if not gui then return nil end
+    
+    local levelLabel = gui:FindFirstChild("Main")
+                      and gui.Main:FindFirstChild("Screen")
+                      and gui.Main.Screen:FindFirstChild("Hud")
+                      and gui.Main.Screen.Hud:FindFirstChild("Level")
+    
+    if not levelLabel or not levelLabel:IsA("TextLabel") then
+        return nil
+    end
+    
+    local levelText = levelLabel.Text
+    local level = tonumber(string.match(levelText, "%d+"))
+    return level
+end
+
+----------------------------------------------------------------
 -- HELPER: QUEST & MOVEMENT
 ----------------------------------------------------------------
 local function getActiveQuestName()
@@ -299,6 +320,35 @@ local function getNpcModel(name)
 end
 
 ----------------------------------------------------------------
+-- FORCE COMPLETE (For recovery from disconnected dialogue)
+----------------------------------------------------------------
+local function forceCompleteQuest1()
+    print("\n🔧 Force completing Quest 1...")
+    
+    local npcModel = getNpcModel(NPC_NAME)
+    if not npcModel then
+        warn("❌ Cannot force complete - NPC not found")
+        return false
+    end
+    
+    -- 1. Start dialogue
+    print("   📡 Starting dialogue...")
+    invokeDialogueStart(npcModel)
+    task.wait(0.5)
+    
+    -- 2. Send command immediately
+    print("   📡 Sending quest accept command...")
+    invokeRunCommand(QUEST_OPTION_ARG)
+    task.wait(0.5)
+    
+    -- 3. Clean up
+    ForceEndDialogueAndRestore()
+    
+    print("   ✅ Force complete done!")
+    return true
+end
+
+----------------------------------------------------------------
 -- MAIN EXECUTION
 ----------------------------------------------------------------
 local function Run_Quest1()
@@ -306,11 +356,51 @@ local function Run_Quest1()
     print("🚀 QUEST 1: " .. QUEST_NAME)
     print(string.rep("=", 50))
     
+    -- ✅ Step 1: Check Level first
+    local level = getPlayerLevel()
+    print(string.format("📊 Player Level: %s", tostring(level)))
+    
+    -- ✅ Step 2: Check if Quest 1 UI exists
     local activeQuest = getActiveQuestName()
-    if activeQuest ~= QUEST_NAME then
-        warn("⚠️ Quest mismatch. Active: " .. tostring(activeQuest))
-    else
+    print(string.format("📋 Active Quest: %s", tostring(activeQuest)))
+    
+    -- Check if Quest 2 exists (means Quest 1 is done)
+    local quest2Exists = false
+    local gui = player:FindFirstChild("PlayerGui")
+    if gui then
+        local list = gui:FindFirstChild("Main") and gui.Main:FindFirstChild("Screen") 
+                     and gui.Main.Screen:FindFirstChild("Quests") and gui.Main.Screen.Quests:FindFirstChild("List")
+        if list and list:FindFirstChild("Introduction1Title") then
+            quest2Exists = true
+        end
+    end
+    
+    if quest2Exists then
+        print("✅ Quest 2 found! Quest 1 already completed.")
+        print(string.rep("=", 50))
+        return
+    end
+    
+    if activeQuest == QUEST_NAME then
         print("✅ Quest Active: " .. activeQuest)
+        -- Continue to normal flow below
+    elseif activeQuest == nil then
+        -- ⚠️ No quest UI found at all! Maybe disconnected during dialogue
+        print("\n⚠️ DETECTED: No Quest UI found!")
+        print("   → Player may have disconnected during dialogue")
+        print("   → Attempting force recovery...")
+        
+        local success = forceCompleteQuest1()
+        if success then
+            cleanupState()
+            disableNoclip()
+            print("\n" .. string.rep("=", 50))
+            print("🎉 Quest 1 Recovery Complete!")
+            print(string.rep("=", 50))
+            return
+        end
+    else
+        warn("⚠️ Quest mismatch. Active: " .. tostring(activeQuest))
     end
 
     local npcModel = getNpcModel(NPC_NAME)
