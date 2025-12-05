@@ -1,4 +1,3 @@
-local _G = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"))
 local Shared = _G.Shared
 
 -- QUEST 9: "The First Upgrade!" (Auto Enhance to +3)

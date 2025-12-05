@@ -1,4 +1,3 @@
-local _G = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"))
 local Shared = _G.Shared
 
 -- QUEST 7: "Forging Under Pressure!" - SMART SYSTEM (FIXED VERSION)

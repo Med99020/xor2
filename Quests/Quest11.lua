@@ -1,4 +1,3 @@
-local _G = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"))
 local Shared = _G.Shared
 
 -- QUEST 11: "End of the Beginning!" (Report to Sensei Moro - Final Quest)

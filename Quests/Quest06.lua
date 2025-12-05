@@ -1,4 +1,3 @@
-local _G = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"))
 local Shared = _G.Shared
 
 -- QUEST 6 ONLY: "Preparing For Battle!" (FIXED: smoothMoveTo + Lock Position)

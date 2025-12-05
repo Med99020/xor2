@@ -1,4 +1,3 @@
-local _G = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"))
 local Shared = _G.Shared
 
 -- QUEST 5: "New Pickaxe!" (SMART SYSTEM: Priority-based + Flexible + Dynamic Zombie Tracking)

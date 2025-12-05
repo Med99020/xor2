@@ -1,4 +1,3 @@
-local _G = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"))
 local Shared = _G.Shared
 
 -- QUEST 18: Smart Teleport & Mining + Auto Sell & Auto Buy (FIXED)

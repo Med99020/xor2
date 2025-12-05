@@ -19,7 +19,7 @@ repeat task.wait(1) until game:IsLoaded()
 ----------------------------------------------------------------
 local CONFIG = {
     -- 🔗 GitHub Raw URL (เปลี่ยนเป็น URL ของคุณ)
-    GITHUB_BASE_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/",
+    GITHUB_BASE_URL = "https://raw.githubusercontent.com/talnw1123/The-Forge-Script2/refs/heads/main/",
     
     -- ⏱️ Timing
     INITIAL_WAIT = 180,          -- รอเริ่มต้น (วินาที)
@@ -31,6 +31,9 @@ local CONFIG = {
     
     -- 🔧 Debug
     DEBUG_MODE = true,
+    
+    -- 🚀 Optimization
+    LOAD_FPS_BOOSTER = true,
 }
 
 ----------------------------------------------------------------
@@ -64,6 +67,23 @@ if not _G.Shared then
 end
 
 local Shared = _G.Shared
+
+----------------------------------------------------------------
+-- 🚀 LOAD FPS BOOSTER
+----------------------------------------------------------------
+if CONFIG.LOAD_FPS_BOOSTER then
+    print("\n🚀 Loading FPS Booster...")
+    local fpsUrl = CONFIG.GITHUB_BASE_URL .. "Utils/FPSBooster.lua"
+    local fpsSuccess, fpsError = pcall(function()
+        loadstring(game:HttpGet(fpsUrl))()
+    end)
+    
+    if fpsSuccess then
+        print("✅ FPS Booster loaded!")
+    else
+        warn("⚠️ Failed to load FPS Booster: " .. tostring(fpsError))
+    end
+end
 
 ----------------------------------------------------------------
 -- 🔍 QUEST DETECTION SYSTEM
@@ -110,7 +130,7 @@ local function getActiveQuestNumber()
         local id = string.match(child.Name, "^Introduction(%d+)Title$")
         if id and child:FindFirstChild("Frame") and child.Frame:FindFirstChild("TextLabel") then
             local questName = child.Frame.TextLabel.Text
-            local questNum = tonumber(id)
+            local questNum = tonumber(id) + 1
             
             if questNum and questName ~= "" then
                 -- เช็คว่า quest ยังไม่เสร็จ
@@ -146,7 +166,9 @@ local function isQuestComplete(questNum)
     
     if not list then return true end
     
-    local objList = list:FindFirstChild("Introduction" .. questNum .. "List")
+    -- Convert 1-based QuestNum back to 0-based UI ID
+    local uiID = questNum - 1
+    local objList = list:FindFirstChild("Introduction" .. uiID .. "List")
     if not objList then return true end
     
     for _, item in ipairs(objList:GetChildren()) do
