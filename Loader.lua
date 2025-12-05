@@ -256,7 +256,6 @@ end
 local function runQuestLoop()
     print("\n" .. string.rep("=", 60))
     print("🎮 STARTING AUTO QUEST RUNNER")
-```lua
 if not _G.Shared then
     warn("❌ _G.Shared not found after loading Shared.lua")
     return
@@ -615,4 +614,4 @@ end
 
 -- Start quest loop
 runQuestLoop()
-```
+
