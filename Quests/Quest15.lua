@@ -1,5 +1,5 @@
 local Shared = _G.Shared
-print("🔄 Quest 15 Script Loaded (Checking UI...)")
+-- Silent load (no console spam)
 
 -- QUEST 15: Auto Claim Index (Codex System)
 -- ✅ Scans UI for claimable items (Matches TestClaim.lua logic)
@@ -16,7 +16,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- CONFIG
 ----------------------------------------------------------------
 local Quest15Active = true
-local DEBUG_MODE = true -- Enabled by default to match TestClaim visibility
+local DEBUG_MODE = false -- Set to true for verbose output
 
 local QUEST_CONFIG = {
     QUEST_NAME = "Auto Claim Index",
@@ -270,18 +270,6 @@ end
 ----------------------------------------------------------------
 -- EXECUTE
 ----------------------------------------------------------------
-print(string.rep("=", 50))
-print("🚀 QUEST 15: " .. QUEST_CONFIG.QUEST_NAME)
-print("🎯 Scanning for claimable Index items...")
-print(string.rep("=", 50))
-
+-- Execute silently (no console spam)
 local success = claimAllIndex()
-
-if success then
-    print("\n✅ Index claiming complete!")
-else
-    print("\n⏸️ No items to claim (or UI not found)")
-end
-
-print(string.rep("=", 50))
 Quest15Active = false
