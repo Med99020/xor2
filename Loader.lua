@@ -382,33 +382,19 @@ local function runQuestLoop()
     if currentIsland == "Island2" then
         -- ============================================
         -- 🌋 ISLAND 2: RUN QUEST 19 ONLY (Mining Loop)
+        -- Quest 19 has its own internal mining loop
         -- ============================================
         print("\n" .. string.rep("=", 60))
         print("🌋 ISLAND 2 DETECTED - QUEST 19 MODE")
-        print("   ⛏️ Starting Mining + Auto Sell & Buy Loop...")
+        print("   ⛏️ Starting Mining + Auto Sell & Buy...")
         print(string.rep("=", 60))
         
-        local loopCount = 0
+        -- Run Quest 19 ONCE - it has its own internal infinite loop
+        loadQuest(19)
         
-        while true do
-            loopCount = loopCount + 1
-            print(string.format("\n🔄 Quest 19 Loop #%d", loopCount))
-            
-            local success = loadQuest(19)
-            
-            if success then
-                local timeout = 300  -- 5 minutes
-                local startTime = tick()
-                
-                while not isQuestComplete(19) and (tick() - startTime) < timeout do
-                    task.wait(5)
-                end
-            end
-            
-            task.wait(5)
-        end
-        
-        return  -- Never reaches here (infinite loop)
+        -- Quest 19 will run its mining loop internally
+        -- This return is reached only if Quest 19 ends (which it shouldn't)
+        return
     end
     
     -- ============================================
