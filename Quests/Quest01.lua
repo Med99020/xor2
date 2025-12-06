@@ -322,11 +322,40 @@ end
 ----------------------------------------------------------------
 -- FORCE COMPLETE (For recovery from disconnected dialogue)
 -- Uses body move to fixed NPC position
+-- Only runs if Quest List is EMPTY (no items)
 ----------------------------------------------------------------
 local NPC_POSITION = Vector3.new(-200.07, 30.37, 158.41)
 
 local function forceCompleteQuest1()
-    print("\n🔧 Force completing Quest 1...")
+    print("\n🔧 Checking if force complete is needed...")
+    
+    -- ⚠️ เช็คก่อนว่า Quest List ว่างเปล่าจริงไหม
+    local gui = player:FindFirstChild("PlayerGui")
+    local isQuestListEmpty = true
+    
+    if gui then
+        local list = gui:FindFirstChild("Main") and gui.Main:FindFirstChild("Screen") 
+                     and gui.Main.Screen:FindFirstChild("Quests") and gui.Main.Screen.Quests:FindFirstChild("List")
+        if list then
+            for _, child in ipairs(list:GetChildren()) do
+                -- มี Quest item อยู่ (ไม่ใช่แค่ UIListLayout หรือ UIPadding)
+                if child.Name ~= "UIListLayout" and child.Name ~= "UIPadding" then
+                    isQuestListEmpty = false
+                    break
+                end
+            end
+        end
+    end
+    
+    -- ❌ ถ้ามี Quest items อยู่ → ไม่ทำ forceComplete
+    if not isQuestListEmpty then
+        print("   ⏭️  Quest List has items (not empty)")
+        print("   → Skipping force complete (other quests active)")
+        return false
+    end
+    
+    -- ✅ Quest List ว่างเปล่า → ทำ forceComplete
+    print("   ✅ Quest List is EMPTY! Proceeding with force complete...")
     print(string.format("   🎯 Moving to NPC position (%.1f, %.1f, %.1f)...", 
         NPC_POSITION.X, NPC_POSITION.Y, NPC_POSITION.Z))
     
@@ -389,37 +418,25 @@ local function Run_Quest1()
     print("🚀 QUEST 1: " .. QUEST_NAME)
     print(string.rep("=", 50))
     
-    -- ✅ Step 1: Check Level first
-    local level = getPlayerLevel()
-    print(string.format("📊 Player Level: %s", tostring(level)))
-    
-    -- ✅ Step 2: Check if Quest 1 UI exists
-    local activeQuest = getActiveQuestName()
-    print(string.format("📋 Active Quest: %s", tostring(activeQuest)))
-    
-    -- Check if Quest 2 exists (means Quest 1 is done)
-    local quest2Exists = false
+    -- ✅ เช็คว่ามี Introduction0Title (Quest 1 UI) หรือไม่
     local gui = player:FindFirstChild("PlayerGui")
+    local hasQuest1UI = false
+    
     if gui then
         local list = gui:FindFirstChild("Main") and gui.Main:FindFirstChild("Screen") 
                      and gui.Main.Screen:FindFirstChild("Quests") and gui.Main.Screen.Quests:FindFirstChild("List")
-        if list and list:FindFirstChild("Introduction1Title") then
-            quest2Exists = true
+        if list and list:FindFirstChild("Introduction0Title") then
+            hasQuest1UI = true
         end
     end
     
-    if quest2Exists then
-        print("✅ Quest 2 found! Quest 1 already completed.")
-        print(string.rep("=", 50))
-        return
-    end
-    
-    if activeQuest == QUEST_NAME then
-        print("✅ Quest Active: " .. activeQuest)
-        -- Continue to normal flow below
-    elseif activeQuest == nil then
-        -- ⚠️ No quest UI found at all! Maybe disconnected during dialogue
-        print("\n⚠️ DETECTED: No Quest UI found!")
+    if hasQuest1UI then
+        -- ✅ มี Quest 1 UI → ทำงานปกติ
+        print("✅ Quest 1 UI (Introduction0Title) found! Continuing normal flow...")
+    else
+        -- ⚠️ ไม่มี Quest 1 UI → forceCompleteQuest1
+        print("\n⚠️ DETECTED: No Quest 1 UI (Introduction0Title)!")
+        print("   → Quest 1 UI not visible")
         print("   → Player may have disconnected during dialogue")
         print("   → Attempting force recovery...")
         
@@ -432,8 +449,6 @@ local function Run_Quest1()
             print(string.rep("=", 50))
             return
         end
-    else
-        warn("⚠️ Quest mismatch. Active: " .. tostring(activeQuest))
     end
 
     local npcModel = getNpcModel(NPC_NAME)
