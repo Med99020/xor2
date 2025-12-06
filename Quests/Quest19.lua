@@ -233,7 +233,9 @@ local function cleanupExpiredBlacklist()
     end
 end
 
-local AutoSellInitialized = false
+-- Use _G to persist across script reloads (Loader runs Quest 19 in loop)
+_G.Quest19AutoSellInitialized = _G.Quest19AutoSellInitialized or false
+local AutoSellInitialized = _G.Quest19AutoSellInitialized
 
 local function cleanupState()
     if State.hpWatchConn then State.hpWatchConn:Disconnect() State.hpWatchConn = nil end
@@ -606,6 +608,7 @@ local function initAutoSellWithNPC()
     task.wait(1)
     
     AutoSellInitialized = true
+    _G.Quest19AutoSellInitialized = true  -- Persist across script reloads
     
     print("\n" .. string.rep("=", 60))
     print("✅ AUTO SELL INITIALIZED!")
@@ -690,6 +693,20 @@ local function unlockPosition()
         if DEBUG_MODE then
             print("   🔓 Position unlocked")
         end
+    end
+    
+    -- Also cleanup body movers to prevent conflict with smoothMoveTo
+    if State.moveConn then
+        State.moveConn:Disconnect()
+        State.moveConn = nil
+    end
+    if State.bodyVelocity and State.bodyVelocity.Parent then
+        State.bodyVelocity:Destroy()
+        State.bodyVelocity = nil
+    end
+    if State.bodyGyro and State.bodyGyro.Parent then
+        State.bodyGyro:Destroy()
+        State.bodyGyro = nil
     end
 end
 
