@@ -652,7 +652,7 @@ local function startAutoSellTask()
     print("🤖 Auto Sell Background Task Started!")
     
     State.autoSellTask = task.spawn(function()
-        while Quest18Active do
+        while Quest19Active do
             task.wait(QUEST_CONFIG.AUTO_SELL_INTERVAL)
             
             if not State.isPaused then
@@ -1602,7 +1602,7 @@ local function doMineBasaltRock()
         
         task.wait(0.5)
         
-        while not State.targetDestroyed and Quest18Active and not State.isPaused do
+        while not State.targetDestroyed and Quest19Active and not State.isPaused do
             if not char or not char.Parent then
                 break
             end
