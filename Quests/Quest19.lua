@@ -83,7 +83,7 @@ local QUEST_CONFIG = {
     
     -- Tier 3: Basalt Vein (If have Magma Pickaxe)
     BASALT_VEIN_CONFIG = {
-        ROCK_NAME = "Basalt Core",
+        ROCK_NAME = "Basalt Vein",
         MINING_PATHS = {
             "Island2CaveStart",
             "Island2CaveDanger1",
@@ -1406,8 +1406,8 @@ local function getCurrentMiningConfig()
     if hasPickaxe(magmaPickaxe) then
         print("   🔥 Have Magma Pickaxe → Mining Basalt Vein")
         return {
-            ROCK_NAME = QUEST_CONFIG.BASALT_VEIN_CONFIG.ROCK_NAME,
-            MINING_PATHS = QUEST_CONFIG.BASALT_VEIN_CONFIG.MINING_PATHS,
+            ROCK_NAME = QUEST_CONFIG.BASALT_CORE_CONFIG.ROCK_NAME,
+            MINING_PATHS = QUEST_CONFIG.BASALT_CORE_CONFIG.MINING_PATHS,
         }
     -- Tier 2: Cobalt Pickaxe → Basalt Core
     elseif hasPickaxe(cobaltPickaxe) then
