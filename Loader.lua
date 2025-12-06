@@ -27,7 +27,7 @@ local CONFIG = {
     
     -- 🎮 Quest Range
     MIN_QUEST = 1,
-    MAX_QUEST = 18,
+    MAX_QUEST = 19,  -- Updated: 1-18 for Island1, 19 for Island2
     
     -- 🔧 Debug
     DEBUG_MODE = true,
@@ -79,6 +79,26 @@ local Shared = _G.Shared
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local Workspace = game:GetService("Workspace")
+
+-- 🌍 ISLAND DETECTION
+local FORGES_FOLDER = Workspace:WaitForChild("Forges", 10)
+
+local function getCurrentIsland()
+    if not FORGES_FOLDER then
+        return nil
+    end
+    
+    for _, child in ipairs(FORGES_FOLDER:GetChildren()) do
+        if child:IsA("Folder") or child:IsA("Model") then
+            local islandMatch = string.match(child.Name, "Island(%d+)")
+            if islandMatch then
+                return "Island" .. islandMatch
+            end
+        end
+    end
+    return nil
+end
 
 
 ----------------------------------------------------------------
@@ -351,10 +371,52 @@ local function runQuestLoop()
         print("✅ Quest 1 recovery attempted. Continuing...")
     end
     
-    local currentQuest = CONFIG.MIN_QUEST
     local maxAttempts = 3
     local reachedQuest18 = false
     local quest13Run = false  -- Track Quest 13 execution
+    
+    -- 🌍 ISLAND-BASED QUEST ROUTING
+    local currentIsland = getCurrentIsland()
+    print(string.format("\n🌍 Current Island: %s", currentIsland or "Unknown"))
+    
+    if currentIsland == "Island2" then
+        -- ============================================
+        -- 🌋 ISLAND 2: RUN QUEST 19 ONLY (Mining Loop)
+        -- ============================================
+        print("\n" .. string.rep("=", 60))
+        print("🌋 ISLAND 2 DETECTED - QUEST 19 MODE")
+        print("   ⛏️ Starting Mining + Auto Sell & Buy Loop...")
+        print(string.rep("=", 60))
+        
+        local loopCount = 0
+        
+        while true do
+            loopCount = loopCount + 1
+            print(string.format("\n🔄 Quest 19 Loop #%d", loopCount))
+            
+            local success = loadQuest(19)
+            
+            if success then
+                local timeout = 300  -- 5 minutes
+                local startTime = tick()
+                
+                while not isQuestComplete(19) and (tick() - startTime) < timeout do
+                    task.wait(5)
+                end
+            end
+            
+            task.wait(5)
+        end
+        
+        return  -- Never reaches here (infinite loop)
+    end
+    
+    -- ============================================
+    -- 🏝️ ISLAND 1: RUN QUESTS 1-18 (Normal Flow)
+    -- ============================================
+    print("\n🏝️ ISLAND 1 MODE - Running Quests 1-18...")
+    
+    local currentQuest = CONFIG.MIN_QUEST
     
     -- เช็คว่าเริ่มที่ Quest 18 หรือยัง
     local activeNum, _ = getActiveQuestNumber()
@@ -363,7 +425,7 @@ local function runQuestLoop()
         print("\n🌋 Quest 18 detected! Skipping Quest 1-17 checks...")
     end
     
-    while currentQuest <= CONFIG.MAX_QUEST do
+    while currentQuest <= 18 do  -- Island 1: max = 18
         -- ถ้าถึง Quest 18 แล้ว ให้ skip ไป Quest 18 เลย
         if reachedQuest18 and currentQuest < 18 then
             currentQuest = 18
