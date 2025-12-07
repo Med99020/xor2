@@ -45,6 +45,15 @@ local QUEST_CONFIG = {
         SELL_SHOP_POSITION = Vector3.new(-115.1, 22.3, -92.3),  -- ขาย Weapon/Armor
         BUY_SHOP_POSITION = Vector3.new(378, 88.6, 109.6),       -- ซื้อ Magma Pickaxe
     },
+
+    -- Priority 2.8: Stash Capacity Check
+    STASH_CHECK_CONFIG = {
+        ENABLED = true,
+        CHECK_INTERVAL = 20, -- Seconds
+        FULL_COOLDOWN = 60,  -- Minutes cooldown after clearing (will be treated as seconds in code, user said 1 min = 60s)
+        SHOP_POSITION = Vector3.new(-165, 22, -111.7),
+        NPC_NAME = "Greedy Cey",
+    },
     
     -- Priority 3: Mining (Default: Basalt Rock)
     ROCK_NAME = "Basalt Rock",
