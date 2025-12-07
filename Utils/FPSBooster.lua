@@ -14,9 +14,9 @@ local Settings = {
     DisableShadows = true,         -- ปิดเงา
     DisableParticles = true,       -- ปิด Particles/Effects
     DisableDecals = true,          -- ปิด Decals
-    DisableTextures = true,       -- ปิด Textures (ทำให้ดูแย่มาก)
-    Disable3DRendering = true,    -- ปิด 3D Rendering (สุดขีด)
-    BlackScreenMode = true,       -- เปิดหน้าจอดำ (ประหยัด GPU + CPU)
+    DisableTextures = true,        -- ปิด Textures (ทำให้ดูแย่มาก)
+    Disable3DRendering = true,     -- ปิด 3D Rendering (สุดขีด)
+    BlackScreenMode = true,        -- เปิดหน้าจอดำ (ประหยัด GPU + CPU)
     
     -- ====== LIGHTING ======
     DisableGlobalShadows = true,   -- ปิด Global Shadows
@@ -27,7 +27,7 @@ local Settings = {
     
     -- ====== TERRAIN ======
     LowerTerrainQuality = true,    -- ลดคุณภาพ Terrain
-    DisableWater = true,          -- ปิด Water rendering
+    DisableWater = true,           -- ปิด Water rendering
     
     -- ====== CHARACTER ======
     DisablePlayerNames = false,    -- ซ่อนชื่อ Player
@@ -61,12 +61,10 @@ local function setGraphicsQuality()
     
     print("🎨 Lowering Graphics Quality...")
     
-    -- ลด Quality Level ใน Settings
     pcall(function()
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     end)
     
-    -- ลด MeshPartDetail
     pcall(function()
         settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.DistanceBased
     end)
@@ -78,12 +76,10 @@ end
 local function disableLightingEffects()
     print("💡 Disabling Lighting Effects...")
     
-    -- Global Shadows
     if Settings.DisableGlobalShadows then
         pcall(function() Lighting.GlobalShadows = false end)
     end
     
-    -- ปิด Post-Processing Effects
     for _, effect in ipairs(Lighting:GetChildren()) do
         pcall(function()
             if effect:IsA("BloomEffect") and Settings.DisableBloom then
@@ -220,19 +216,16 @@ local function optimizeCharacters()
         
         for _, desc in ipairs(char:GetDescendants()) do
             pcall(function()
-                -- ซ่อน Accessories
                 if Settings.DisableAccessories and desc:IsA("Accessory") then
                     desc:Destroy()
                 end
                 
-                -- ปิด Particles บน Character
                 if Settings.DisableParticles then
                     if desc:IsA("ParticleEmitter") or desc:IsA("Trail") then
                         desc.Enabled = false
                     end
                 end
                 
-                -- Simplify by disabling shadows
                 if Settings.SimplifyCharacters and desc:IsA("BasePart") then
                     desc.CastShadow = false
                 end
@@ -240,19 +233,16 @@ local function optimizeCharacters()
         end
     end
     
-    -- Optimize local player
     if player.Character then
         optimizeChar(player.Character)
     end
     
-    -- Optimize other players
     for _, otherPlayer in ipairs(Players:GetPlayers()) do
         if otherPlayer ~= player and otherPlayer.Character then
             optimizeChar(otherPlayer.Character)
         end
     end
     
-    -- Connect for new characters
     Players.PlayerAdded:Connect(function(p)
         p.CharacterAdded:Connect(function(char)
             task.wait(1)
@@ -296,7 +286,6 @@ local function startGarbageCollection()
         while true do
             task.wait(Settings.GCInterval)
             pcall(function()
-                -- เคลียร์ memory
                 gcinfo()
                 collectgarbage("collect")
             end)
@@ -337,7 +326,7 @@ local function enableBlackScreen()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "BlackScreenOverlay"
     screenGui.IgnoreGuiInset = true
-    screenGui.DisplayOrder = 1000 -- Top most
+    screenGui.DisplayOrder = 1000
     screenGui.Parent = player:WaitForChild("PlayerGui")
     
     local frame = Instance.new("Frame")
@@ -357,14 +346,15 @@ local function enableBlackScreen()
     text.TextSize = 24
     text.Parent = screenGui
     
+    -- ชื่อตัวละครตัวใหญ่
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Text = player.Name or "Unknown"
-    nameLabel.Size = UDim2.new(1, 0, 0, 60)
-    nameLabel.Position = UDim2.new(0, 0, 0.5, 10)
+    nameLabel.Size = UDim2.new(1, 0, 0, 80)
+    nameLabel.Position = UDim2.new(0, 0, 0.5, 0)
     nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan
+    nameLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
     nameLabel.Font = Enum.Font.FredokaOne
-    nameLabel.TextSize = 48
+    nameLabel.TextSize = 64
     nameLabel.Parent = screenGui
     
     print("   ✅ Black Screen Overlay Active")
@@ -375,7 +365,6 @@ local function disable3DRendering()
     
     print("🖥️ Disabling 3D Rendering (EXTREME)...")
     
-    -- Method 1: RunService
     local s1, _ = pcall(function()
         RunService:Set3dRenderingEnabled(false)
     end)
@@ -383,7 +372,7 @@ local function disable3DRendering()
     if s1 then
         print("   ✅ Set3dRenderingEnabled(false) Success!")
     else
-        print("   ⚠️ Set3dRenderingEnabled not supported, using fallback...")
+        print("   ⚠️ Set3dRenderingEnabled not supported, using Black Screen fallback...")
     end
 end
 
@@ -394,6 +383,7 @@ local function createFPSCounter()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "FPSCounter"
     screenGui.ResetOnSpawn = false
+    screenGui.DisplayOrder = 1001
     screenGui.Parent = player:WaitForChild("PlayerGui")
     
     local fpsLabel = Instance.new("TextLabel")
@@ -423,7 +413,6 @@ local function createFPSCounter()
             local fps = math.floor(frameCount / (currentTime - lastTime))
             fpsLabel.Text = string.format("FPS: %d", fps)
             
-            -- เปลี่ยนสีตาม FPS
             if fps >= 50 then
                 fpsLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
             elseif fps >= 30 then
@@ -457,64 +446,6 @@ local function runAllOptimizations()
     optimizeCharacters()
     disableSounds()
     startGarbageCollection()
-    startFPSLimiter()
-    startFPSLimiter()
-    enableBlackScreen()
-    disable3DRendering()
-    createFPSCounter()
-    
-    print("\n" .. string.rep("=", 50))
-    print("✅ FPS BOOSTER - All Optimizations Applied!")
-    print(string.rep("=", 50) .. "\n")
-end
-
--- RUN
-runAllOptimizations()
-
--- Re-apply when new objects are added
-Workspace.DescendantAdded:Connect(function(desc)
-    task.defer(function()
-        pcall(function()
-            if Settings.DisableParticles then
-                if desc:IsA("ParticleEmitter") or desc:IsA("Fire") or desc:IsA("Smoke") then
-                    desc.Enabled = false
-                end
-            end
-            if Settings.DisableShadows and desc:IsA("BasePart") then
-                desc.CastShadow = false
-            end
-        end)
-    end)
-end)
-          fpsLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-            end
-            
-            frameCount = 0
-            lastTime = currentTime
-        end
-    end)
-    
-    print("📊 FPS Counter created!")
-end
-
-----------------------------------------------------------------
--- 🚀 RUN ALL OPTIMIZATIONS
-----------------------------------------------------------------
-local function runAllOptimizations()
-    print("\n" .. string.rep("=", 50))
-    print("🚀 FPS BOOSTER - Starting Optimizations")
-    print(string.rep("=", 50) .. "\n")
-    
-    setGraphicsQuality()
-    disableLightingEffects()
-    disableParticles()
-    disableDecalsAndTextures()
-    disableShadows()
-    optimizeTerrain()
-    optimizeCharacters()
-    disableSounds()
-    startGarbageCollection()
-    startFPSLimiter()
     startFPSLimiter()
     enableBlackScreen()
     disable3DRendering()
