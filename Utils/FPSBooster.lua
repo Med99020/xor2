@@ -355,7 +355,7 @@ local function enableBlackScreen()
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
     nameLabel.Font = Enum.Font.FredokaOne
-    nameLabel.TextSize = 64
+    nameLabel.TextSize = 20
     nameLabel.ZIndex = 1001
     nameLabel.Parent = frame
     
@@ -367,7 +367,7 @@ local function enableBlackScreen()
     goldLabel.BackgroundTransparency = 1
     goldLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Gold color
     goldLabel.Font = Enum.Font.FredokaOne
-    goldLabel.TextSize = 48
+    goldLabel.TextSize = 35
     goldLabel.ZIndex = 1001
     goldLabel.Parent = frame
     
