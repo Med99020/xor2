@@ -367,7 +367,7 @@ local function enableBlackScreen()
     goldLabel.BackgroundTransparency = 1
     goldLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Gold color
     goldLabel.Font = Enum.Font.FredokaOne
-    goldLabel.TextSize = 35
+    goldLabel.TextSize = 32
     goldLabel.ZIndex = 1001
     goldLabel.Parent = frame
     
